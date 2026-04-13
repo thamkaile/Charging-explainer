@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mobile Charging Physics - Interactive Explainer</title>
+
+  <!-- React & ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+  <!-- Babel for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #6366f1;
+      --primary-light: #818cf8;
+      --primary-dark: #4f46e5;
+      --secondary: #ec4899;
+      --accent: #06b6d4;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+
+      --bg-dark: #0f0f1a;
+      --bg-card: rgba(30, 30, 50, 0.6);
+      --bg-glass: rgba(255, 255, 255, 0.05);
+      --border-glass: rgba(255, 255, 255, 0.1);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+      --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.3);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-dark);
+      background-image:
+        radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(6, 182, 212, 0.05) 0%, transparent 70%);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: var(--primary);
+      border-radius: 50%;
+      opacity: 0.3;
+      animation: float 20s infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+      10% { opacity: 0.3; }
+      90% { opacity: 0.3; }
+      100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
+    }
+
+    .glass-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+    }
+
+    .glass-card-strong {
+      background: rgba(30, 30, 50, 0.8);
+      backdrop-filter: blur(30px);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, var(--primary-light), var(--secondary), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--bg-glass);
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary-light), var(--primary));
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(99, 102, 241, 0.5);
+      transition: transform 0.2s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+    }
+
+    .tab {
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      font-weight: 500;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid transparent;
+    }
+
+    .tab:hover {
+      background: var(--bg-glass);
+      color: var(--text-primary);
+    }
+
+    .tab.active {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: var(--bg-glass);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-fill::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+      );
+      animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .stat-card {
+      padding: 16px;
+      border-radius: var(--radius-md);
+      background: var(--bg-glass);
+      border: 1px solid var(--border-glass);
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .charger-card {
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      background: var(--bg-glass);
+      border: 2px solid var(--border-glass);
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .charger-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.1),
+        transparent
+      );
+      transition: left 0.5s;
+    }
+
+    .charger-card:hover::before {
+      left: 100%;
+    }
+
+    .charger-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--primary);
+      box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+    }
+
+    .charger-card.active {
+      border-color: var(--primary);
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(236, 72, 153, 0.1));
+      box-shadow: 0 8px 30px rgba(99, 102, 241, 0.4);
+    }
+
+    .charger-card.active .check-icon {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .check-icon {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: scale(0);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .canvas-container {
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(15, 15, 26, 0.8), rgba(30, 30, 50, 0.8));
+      border: 1px solid var(--border-glass);
+    }
+
+    .concept-card {
+      padding: 24px;
+      border-radius: var(--radius-lg);
+      background: var(--bg-glass);
+      border: 1px solid var(--border-glass);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .concept-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .concept-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .concept-card:hover::before {
+      opacity: 1;
+    }
+
+    .concept-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-basic { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+    .badge-standard { background: rgba(99, 102, 241, 0.2); color: var(--primary-light); }
+    .badge-fast { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+    .badge-ultra { background: rgba(236, 72, 153, 0.2); color: var(--secondary); }
+
+    .section-title {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 20px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--primary), transparent);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .header h1 {
+      font-size: 42px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      line-height: 1.1;
+    }
+
+    .header p {
+      font-size: 16px;
+      color: var(--text-secondary);
+    }
+
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+    @media (max-width: 768px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+      .header h1 { font-size: 28px; }
+    }
+
+    .formula-box {
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1));
+      border: 1px solid var(--border-glass);
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+    }
+
+    .formula-box .highlight {
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 6px;
+    }
+
+    .info-box {
+      padding: 16px 20px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      border: 1px solid var(--border-glass);
+      background: var(--bg-glass);
+    }
+
+    .timeline-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .timeline-label {
+      width: 100px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .timeline-track {
+      flex: 1;
+      height: 32px;
+      background: var(--bg-glass);
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border-glass);
+    }
+
+    .timeline-fill {
+      height: 100%;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      padding-left: 14px;
+      font-size: 12px;
+      font-weight: 600;
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      white-space: nowrap;
+    }
+
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-dark); }
+    ::-webkit-scrollbar-thumb { background: var(--border-glass); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    const chargers = [
+      { id: 0, name: '5W Basic', voltage: 5, current: 1, power: 5, badge: 'basic', color: '#f59e0b', gradient: 'linear-gradient(135deg, #f59e0b, #d97706)' },
+      { id: 1, name: '18W Fast', voltage: 9, current: 2, power: 18, badge: 'standard', color: '#6366f1', gradient: 'linear-gradient(135deg, #6366f1, #4f46e5)' },
+      { id: 2, name: '45W Super', voltage: 15, current: 3, power: 45, badge: 'fast', color: '#10b981', gradient: 'linear-gradient(135deg, #10b981, #059669)' },
+      { id: 3, name: '120W Ultra', voltage: 20, current: 6, power: 120, badge: 'ultra', color: '#ec4899', gradient: 'linear-gradient(135deg, #ec4899, #db2777)' }
+    ];
+
+    const chargerInfo = {
+      0: { title: '5W Basic Charger', desc: 'The original iPhone-style charger. Low voltage (5V) and low current (1A). Safe and universal, but slow — it transfers only 5 joules of energy per second into your phone.' },
+      1: { title: '18W Fast Charger', desc: 'Uses higher voltage (9V) and more current (2A). The phone and charger negotiate via Qualcomm Quick Charge or USB-PD protocol to agree on this higher operating point.' },
+      2: { title: '45W SuperCharge', desc: 'Found on premium Android flagships. At 15V × 3A, it pumps 9× more energy per second than the basic charger. A 5000 mAh battery can be charged in just over an hour.' },
+      3: { title: '120W HyperCharge', desc: 'Ultra-fast chargers used by Xiaomi and OPPO. The 20V × 6A combination delivers 120 watts — 24× faster than a basic charger. Advanced thermal management prevents overheating.' }
+    };
+
+    const concepts = [
+      { icon: '⚡', name: 'Voltage (V)', desc: 'The "pressure" that pushes electric charges through a circuit. Higher voltage = more energy per electron.', formula: 'V = W / Q', formulaDesc: 'energy per unit charge', color: '#f59e0b' },
+      { icon: '🌊', name: 'Current (I)', desc: 'The rate of flow of electric charge. More current = more electrons moving per second.', formula: 'I = Q / t', formulaDesc: 'charge per unit time', color: '#6366f1' },
+      { icon: '💪', name: 'Power (P)', desc: 'The rate of energy transfer. Higher power = energy delivered faster = faster charging.', formula: 'P = V × I', formulaDesc: 'voltage × current', color: '#10b981' },
+      { icon: '🔋', name: 'Energy (E)', desc: 'Total energy stored in the battery. Charging time depends on how much energy must be transferred.', formula: 'E = P × t', formulaDesc: 'power × time', color: '#ec4899' }
+    ];
+
+    const ParticleBackground = () => {
+      const particles = Array.from({ length: 30 }, (_, i) => ({
+        id: i,
+        left: Math.random() * 100 + '%',
+        delay: Math.random() * 20 + 's',
+        duration: (Math.random() * 10 + 15) + 's'
+      }));
+
+      return (
+        <div className="particles">
+          {particles.map(p => (
+            <div key={p.id} className="particle" style={{ left: p.left, animationDelay: p.delay, animationDuration: p.duration }} />
+          ))}
+        </div>
+      );
+    };
+
+    const ElectronCanvas = ({ charger }) => {
+      const canvasRef = useRef(null);
+
+      useEffect(() => {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        const W = canvas.offsetWidth;
+        const H = canvas.offsetHeight;
+
+        canvas.width = W * window.devicePixelRatio;
+        canvas.height = H * window.devicePixelRatio;
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+        const electronCount = Math.round(8 + (charger.current - 1) * 12);
+        const electrons = Array.from({ length: electronCount }, () => ({
+          x: Math.random() * W,
+          y: 20 + Math.random() * (H - 40),
+          speed: 1.5 + Math.random() * 1.5,
+          r: 3 + Math.random() * 2
+        }));
+
+        let animationId;
+        const draw = () => {
+          ctx.clearRect(0, 0, W, H);
+
+          ctx.strokeStyle = charger.color;
+          ctx.lineWidth = 1;
+          ctx.globalAlpha = 0.2;
+          for (let y = 30; y < H; y += 30) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(W, y);
+            ctx.stroke();
+          }
+
+          electrons.forEach(e => {
+            e.x += e.speed * (charger.current / 1.5);
+            if (e.x > W + 10) e.x = -10;
+
+            const gradient = ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, e.r + 4);
+            gradient.addColorStop(0, charger.color);
+            gradient.addColorStop(0.5, charger.color + '40');
+            gradient.addColorStop(1, 'transparent');
+
+            ctx.beginPath();
+            ctx.arc(e.x, e.y, e.r + 4, 0, Math.PI * 2);
+            ctx.fillStyle = gradient;
+            ctx.globalAlpha = 0.6;
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+            ctx.fillStyle = charger.color;
+            ctx.globalAlpha = 0.9;
+            ctx.fill();
+          });
+
+          ctx.globalAlpha = 1;
+          animationId = requestAnimationFrame(draw);
+        };
+
+        draw();
+        return () => cancelAnimationFrame(animationId);
+      }, [charger]);
+
+      return <canvas ref={canvasRef} style={{ width: '100%', height: '200px', display: 'block' }} />;
+    };
+
+    const StatsDisplay = ({ charger }) => (
+      <div className="grid-3">
+        <div className="stat-card">
+          <div className="stat-label">Voltage</div>
+          <div className="stat-value" style={{ color: charger.color }}>{charger.voltage}V</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Current</div>
+          <div className="stat-value" style={{ color: charger.color }}>{charger.current}A</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Power</div>
+          <div className="stat-value" style={{ color: charger.color }}>{charger.power}W</div>
+        </div>
+      </div>
+    );
+
+    const PowerCalculator = () => {
+      const [voltage, setVoltage] = useState(5);
+      const [current, setCurrent] = useState(1);
+      const power = voltage * current;
+      const multiplier = (power / 5).toFixed(1);
+
+      return (
+        <div className="glass-card" style={{ padding: '24px' }}>
+          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+            Drag the sliders to see how voltage and current affect power:
+          </p>
+
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+              <span style={{ fontSize: '13px', width: '70px', color: 'var(--text-secondary)' }}>Voltage</span>
+              <input type="range" min="5" max="20" value={voltage} onChange={(e) => setVoltage(+e.target.value)} style={{ flex: 1 }} />
+              <span style={{ fontFamily: 'JetBrains Mono', fontSize: '14px', width: '50px', textAlign: 'right', color: '#f59e0b', fontWeight: 600 }}>{voltage}V</span>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+              <span style={{ fontSize: '13px', width: '70px', color: 'var(--text-secondary)' }}>Current</span>
+              <input type="range" min="1" max="6" value={current} onChange={(e) => setCurrent(+e.target.value)} style={{ flex: 1 }} />
+              <span style={{ fontFamily: 'JetBrains Mono', fontSize: '14px', width: '50px', textAlign: 'right', color: '#6366f1', fontWeight: 600 }}>{current}A</span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '20px', background: 'var(--bg-glass)', borderRadius: 'var(--radius-md)', marginBottom: '12px' }}>
+            <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Power =</span>
+            <span style={{ fontFamily: 'JetBrains Mono', fontSize: '36px', fontWeight: 700, background: 'linear-gradient(135deg, #10b981, #06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{power}W</span>
+          </div>
+
+          <div className="progress-bar" style={{ height: '10px' }}>
+            <div className="progress-fill" style={{ width: `${Math.min(100, power / 1.2)}%`, background: 'linear-gradient(90deg, #10b981, #06b6d4)' }} />
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', marginTop: '8px' }}>
+            {multiplier}× faster than a basic 5W charger
+          </div>
+        </div>
+      );
+    };
+
+    const OhmsLawCalculator = () => {
+      const [voltage, setVoltage] = useState(9);
+      const [resistance, setResistance] = useState(4);
+      const current = voltage / resistance;
+      const power = voltage * current;
+      const heat = current * current * resistance;
+      const usefulPower = power - heat;
+
+      return (
+        <div className="glass-card" style={{ padding: '24px' }}>
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+              <span style={{ fontSize: '13px', width: '120px', color: 'var(--text-secondary)' }}>Source Voltage</span>
+              <input type="range" min="5" max="20" value={voltage} onChange={(e) => setVoltage(+e.target.value)} style={{ flex: 1 }} />
+              <span style={{ fontFamily: 'JetBrains Mono', fontSize: '14px', width: '50px', textAlign: 'right', color: '#f59e0b', fontWeight: 600 }}>{voltage}V</span>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '13px', width: '120px', color: 'var(--text-secondary)' }}>Circuit Resistance</span>
+              <input type="range" min="1" max="20" value={resistance} onChange={(e) => setResistance(+e.target.value)} style={{ flex: 1 }} />
+              <span style={{ fontFamily: 'JetBrains Mono', fontSize: '14px', width: '50px', textAlign: 'right', color: '#ec4899', fontWeight: 600 }}>{resistance}Ω</span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', flexWrap: 'wrap', padding: '20px', background: 'var(--bg-glass)', borderRadius: 'var(--radius-lg)' }}>
+            <div style={{ padding: '12px 20px', background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: 'var(--radius-md)', textAlign: 'center', minWidth: '80px' }}>
+              <div style={{ fontSize: '24px', fontWeight: 700, color: '#f59e0b' }}>{voltage}</div>
+              <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Volts</div>
+            </div>
+            <span style={{ fontSize: '20px', color: 'var(--text-muted)' }}>÷</span>
+            <div style={{ padding: '12px 20px', background: 'rgba(236, 72, 153, 0.15)', border: '1px solid rgba(236, 72, 153, 0.3)', borderRadius: 'var(--radius-md)', textAlign: 'center', minWidth: '80px' }}>
+              <div style={{ fontSize: '24px', fontWeight: 700, color: '#ec4899' }}>{resistance}</div>
+              <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ohms</div>
+            </div>
+            <span style={{ fontSize: '20px', color: 'var(--text-muted)' }}>=</span>
+            <div style={{ padding: '12px 20px', background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.3)', borderRadius: 'var(--radius-md)', textAlign: 'center', minWidth: '80px' }}>
+              <div style={{ fontSize: '24px', fontWeight: 700, color: '#6366f1' }}>{current.toFixed(2)}</div>
+              <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Amps</div>
+            </div>
+            <span style={{ fontSize: '20px', color: 'var(--text-muted)' }}>→</span>
+            <div style={{ padding: '12px 20px', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: 'var(--radius-md)', textAlign: 'center', minWidth: '80px' }}>
+              <div style={{ fontSize: '24px', fontWeight: 700, color: '#10b981' }}>{power.toFixed(1)}</div>
+              <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Watts</div>
+            </div>
+          </div>
+
+          <div className="info-box" style={{ marginTop: '16px', background: 'rgba(6, 182, 212, 0.1)' }}>
+            <span style={{ color: 'var(--text-secondary)' }}>
+              Heat lost in cable: I² × R = {current.toFixed(2)}² × {resistance} = <strong style={{ color: '#ec4899' }}>{heat.toFixed(1)}W</strong> wasted as heat.
+              Actual useful power: <strong style={{ color: '#10b981' }}>{usefulPower.toFixed(1)}W</strong>.
+            </span>
+          </div>
+        </div>
+      );
+    };
+
+    const App = () => {
+      const [activeTab, setActiveTab] = useState('chargers');
+      const [selectedCharger, setSelectedCharger] = useState(0);
+
+      const currentCharger = chargers[selectedCharger];
+      const info = chargerInfo[selectedCharger];
+
+      const chargeTimes = [
+        { charger: '5W Basic', hours: 10, label: '~10 hrs', color: '#f59e0b' },
+        { charger: '18W Fast', hours: 2.8, label: '~2.8 hrs', color: '#6366f1' },
+        { charger: '45W Super', hours: 1.1, label: '~1.1 hrs', color: '#10b981' },
+        { charger: '120W Ultra', hours: 0.42, label: '25 min', color: '#ec4899' }
+      ];
+
+      const cableEfficiency = [
+        { name: 'Thin cable', resistance: '2Ω', efficiency: 58, color: '#ec4899' },
+        { name: 'Normal cable', resistance: '1Ω', efficiency: 79, color: '#f59e0b' },
+        { name: 'Good cable', resistance: '0.3Ω', efficiency: 95, color: '#10b981' }
+      ];
+
+      return (
+        <div>
+          <ParticleBackground />
+
+          <div className="container">
+            <header className="header">
+              <h1 className="gradient-text">Why do different chargers charge at different speeds?</h1>
+              <p style={{ color: 'var(--text-secondary)' }}>An interactive physics explainer — Electricity topic, FSPZ0024 Physics II</p>
+            </header>
+
+            <div className="glass-card-strong" style={{ padding: '8px', marginBottom: '32px', display: 'inline-flex', gap: '4px', borderRadius: 'var(--radius-xl)', background: 'rgba(30, 30, 50, 0.4)' }}>
+              <button className={`tab ${activeTab === 'chargers' ? 'active' : ''}`} onClick={() => setActiveTab('chargers')}>🔌 Charger Comparison</button>
+              <button className={`tab ${activeTab === 'concepts' ? 'active' : ''}`} onClick={() => setActiveTab('concepts')}>📚 Physics Concepts</button>
+              <button className={`tab ${activeTab === 'ohm' ? 'active' : ''}`} onClick={() => setActiveTab('ohm')}>⚡ Ohm's Law</button>
+            </div>
+
+            {activeTab === 'chargers' && (
+              <div>
+                <div className="section-title">Select a charger to explore</div>
+                <div className="grid-4" style={{ marginBottom: '24px' }}>
+                  {chargers.map(c => (
+                    <div key={c.id} className={`charger-card ${selectedCharger === c.id ? 'active' : ''}`} onClick={() => setSelectedCharger(c.id)}>
+                      <div className="check-icon" style={{ color: 'white' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      </div>
+                      <span className={`badge badge-${c.badge}`} style={{ marginBottom: '8px', display: 'inline-block' }}>{c.badge}</span>
+                      <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '4px' }}>{c.name}</h3>
+                      <div style={{ fontFamily: 'JetBrains Mono', fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px' }}>{c.voltage}V × {c.current}A</div>
+                      <div style={{ fontSize: '28px', fontWeight: 700, background: c.gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{c.power}W</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="formula-box" style={{ marginBottom: '24px' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Power (W)</span>
+                  <span style={{ color: 'var(--text-muted)', margin: '0 8px' }}>=</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>Voltage (V)</span>
+                  <span style={{ color: 'var(--text-muted)', margin: '0 8px' }}>×</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>Current (A)</span>
+                  <span style={{ color: 'var(--text-muted)', margin: '0 8px' }}>=</span>
+                  <span className="highlight" style={{ background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b' }}>{currentCharger.voltage}V</span>
+                  <span style={{ color: 'var(--text-muted)', margin: '0 8px' }}>×</span>
+                  <span className="highlight" style={{ background: 'rgba(99, 102, 241, 0.2)', color: '#6366f1' }}>{currentCharger.current}A</span>
+                  <span style={{ color: 'var(--text-muted)', margin: '0 8px' }}>=</span>
+                  <span className="highlight" style={{ background: currentCharger.gradient, color: 'white', fontSize: '20px' }}>{currentCharger.power}W</span>
+                </div>
+
+                <div className="section-title">Electron flow — current intensity</div>
+                <div className="canvas-container" style={{ marginBottom: '12px' }}>
+                  <ElectronCanvas charger={currentCharger} />
+                </div>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', marginBottom: '24px' }}>More current = more electrons flowing per second = more energy delivered</p>
+
+                <StatsDisplay charger={currentCharger} />
+
+                <div style={{ height: '1px', background: 'var(--border-glass)', margin: '32px 0' }} />
+
+                <div className="section-title">Speed comparison (relative to 5W baseline)</div>
+                <div style={{ marginBottom: '32px' }}>
+                  {chargers.map((c, i) => (
+                    <div key={c.id} className="timeline-bar">
+                      <span className="timeline-label">{c.name}</span>
+                      <div className="timeline-track">
+                        <div className="timeline-fill" style={{ width: `${(c.power / 120) * 100}%`, background: c.gradient, color: 'white' }}>{(c.power / 5).toFixed(1)}×</div>
+                      </div>
+                      <span style={{ fontFamily: 'JetBrains Mono', fontSize: '13px', fontWeight: 600, color: c.color, minWidth: '50px', textAlign: 'right' }}>{(c.power / 5).toFixed(1)}×</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ height: '1px', background: 'var(--border-glass)', margin: '32px 0' }} />
+
+                <div className="section-title">Estimated time to charge a 5000 mAh battery</div>
+                <div style={{ marginBottom: '24px' }}>
+                  {chargeTimes.map((t, i) => (
+                    <div key={i} className="timeline-bar">
+                      <span className="timeline-label">{t.charger}</span>
+                      <div className="timeline-track">
+                        <div className="timeline-fill" style={{ width: `${(t.hours / 10) * 100}%`, background: t.color, color: 'white' }}>{t.label}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="info-box" style={{ background: `rgba(${currentCharger.color}22, 0.1)`, borderColor: currentCharger.color }}>
+                  <strong style={{ color: currentCharger.color }}>{info.title}:</strong>
+                  <span style={{ color: 'var(--text-secondary)', marginLeft: '8px' }}>{info.desc}</span>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'concepts' && (
+              <div>
+                <div className="grid-2" style={{ marginBottom: '32px' }}>
+                  {concepts.map((concept, i) => (
+                    <div key={i} className="concept-card">
+                      <span className="concept-icon">{concept.icon}</span>
+                      <div style={{ fontSize: '15px', fontWeight: 600, marginBottom: '8px', color: concept.color }}>{concept.name}</div>
+                      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: 1.7 }}>{concept.desc}</p>
+                      <div style={{ fontFamily: 'JetBrains Mono', fontSize: '14px', fontWeight: 600, color: concept.color, padding: '8px 12px', background: 'var(--bg-glass)', borderRadius: 'var(--radius-sm)', display: 'inline-block' }}>{concept.formula}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>{concept.formulaDesc}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ height: '1px', background: 'var(--border-glass)', margin: '32px 0' }} />
+
+                <div className="section-title">The key equation: P = V × I</div>
+                <PowerCalculator />
+
+                <div style={{ height: '1px', background: 'var(--border-glass)', margin: '32px 0' }} />
+
+                <div className="section-title">Why fast chargers need both higher V and higher I</div>
+                <div className="glass-card" style={{ padding: '24px' }}>
+                  <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.8 }}>
+                    Voltage alone doesn't charge faster — the battery's internal resistance limits how much current can safely flow at a given voltage. Fast charging protocols (like Qualcomm Quick Charge, USB Power Delivery, and VOOC) work by having the charger and phone <strong style={{ color: 'var(--primary-light)' }}>negotiate</strong> a higher voltage/current pair that the battery can handle safely. This is why a fast charger on an incompatible phone won't charge faster — the phone refuses the higher voltage.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'ohm' && (
+              <div>
+                <div className="section-title">Ohm's Law & the charging circuit</div>
+
+                <div className="formula-box" style={{ fontSize: '20px', marginBottom: '24px', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(236, 72, 153, 0.15))' }}>
+                  <span className="highlight" style={{ background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b' }}>V</span>
+                  <span style={{ color: 'var(--text-muted)', margin: '0 12px' }}>=</span>
+                  <span className="highlight" style={{ background: 'rgba(99, 102, 241, 0.2)', color: '#6366f1' }}>I</span>
+                  <span style={{ color: 'var(--text-muted)', margin: '0 12px' }}>×</span>
+                  <span className="highlight" style={{ background: 'rgba(236, 72, 153, 0.2)', color: '#ec4899' }}>R</span>
+                  <span style={{ marginLeft: '20px', fontSize: '14px', color: 'var(--text-secondary)' }}>Voltage = Current × Resistance</span>
+                </div>
+
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: 1.7 }}>
+                  A charging circuit has resistance — from the cable, the charger, and the phone's internal components. Explore how resistance affects what actually reaches the battery:
+                </p>
+
+                <OhmsLawCalculator />
+
+                <div style={{ height: '1px', background: 'var(--border-glass)', margin: '32px 0' }} />
+
+                <div className="section-title">Why cable quality matters</div>
+                <div style={{ marginBottom: '16px' }}>
+                  {cableEfficiency.map((c, i) => (
+                    <div key={i} className="timeline-bar">
+                      <span className="timeline-label" style={{ fontSize: '12px' }}>{c.name} ({c.resistance})</span>
+                      <div className="timeline-track">
+                        <div className="timeline-fill" style={{ width: `${c.efficiency}%`, background: c.color, color: 'white' }} />
+                      </div>
+                      <span style={{ fontFamily: 'JetBrains Mono', fontSize: '12px', fontWeight: 600, color: c.color, minWidth: '100px', textAlign: 'right' }}>{c.efficiency}% efficient</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="info-box" style={{ background: 'rgba(236, 72, 153, 0.1)' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>
+                    Power lost as heat in cable = <strong style={{ color: '#ec4899' }}>I² × R</strong>. This is why cheap cables get warm and don't deliver full charging speed — the resistance dissipates energy before it reaches the battery.
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</body>
+</html>
