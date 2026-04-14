@@ -672,6 +672,7 @@
       const current = voltage / resistance;
       const power = voltage * current;
       const heat = current * current * resistance;
+      // Fix floating point issue: ensure useful power never shows as negative
       const usefulPower = Math.max(0, power - heat);
 
       return (
