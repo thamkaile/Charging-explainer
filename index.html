@@ -673,7 +673,8 @@
       const power = voltage * current;
       const heat = current * current * resistance;
       // Fix floating point issue: ensure useful power never shows as negative
-      const usefulPower = Math.max(0, power - heat);
+      const usefulPowerRaw = power - heat;
+      const usefulPower = usefulPowerRaw < 0.05 ? 0 : usefulPowerRaw;
 
       return (
         <div className="glass-card" style={{ padding: '24px' }}>
