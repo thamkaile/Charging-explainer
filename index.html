@@ -672,7 +672,7 @@
       const current = voltage / resistance;
       const power = voltage * current;
       const heat = current * current * resistance;
-      const usefulPower = power - heat;
+      const usefulPower = Math.max(0, power - heat);
 
       return (
         <div className="glass-card" style={{ padding: '24px' }}>
