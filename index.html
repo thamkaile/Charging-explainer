@@ -667,22 +667,24 @@
     };
 
     const OhmsLawCalculator = () => {
-      const [voltage, setVoltage] = useState(9);
+      const [sourceVoltage, setSourceVoltage] = useState(9);
       const [resistance, setResistance] = useState(4);
-      const current = voltage / resistance;
-      const power = voltage * current;
-      const heat = current * current * resistance;
-      // Fix floating point issue: ensure useful power never shows as negative
-      const usefulPowerRaw = power - heat;
-      const usefulPower = usefulPowerRaw < 0.05 ? 0 : usefulPowerRaw;
+      const batteryVoltage = 3.7; // Typical Li-ion battery voltage
+
+      // Correct physics calculations
+      const netVoltage = sourceVoltage - batteryVoltage; // V_net = V_source - V_batt
+      const current = Math.max(0, netVoltage / resistance); // I = V_net / R
+      const usefulPower = batteryVoltage * current; // P_useful = V_batt × I
+      const heatLoss = current * current * resistance; // P_loss = I² × R
+      const totalPower = sourceVoltage * current; // P_total = V_source × I
 
       return (
         <div className="glass-card" style={{ padding: '24px' }}>
           <div style={{ marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
               <span style={{ fontSize: '13px', width: '120px', color: 'var(--text-secondary)' }}>Source Voltage</span>
-              <input type="range" min="5" max="20" value={voltage} onChange={(e) => setVoltage(+e.target.value)} style={{ flex: 1 }} />
-              <span style={{ fontFamily: 'JetBrains Mono', fontSize: '14px', width: '50px', textAlign: 'right', color: '#f59e0b', fontWeight: 600 }}>{voltage}V</span>
+              <input type="range" min="5" max="20" value={sourceVoltage} onChange={(e) => setSourceVoltage(+e.target.value)} style={{ flex: 1 }} />
+              <span style={{ fontFamily: 'JetBrains Mono', fontSize: '14px', width: '50px', textAlign: 'right', color: '#f59e0b', fontWeight: 600 }}>{sourceVoltage}V</span>
             </div>
           </div>
 
@@ -696,30 +698,50 @@
 
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', flexWrap: 'wrap', padding: '20px', background: 'var(--bg-glass)', borderRadius: 'var(--radius-lg)' }}>
             <div style={{ padding: '12px 20px', background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: 'var(--radius-md)', textAlign: 'center', minWidth: '80px' }}>
-              <div style={{ fontSize: '24px', fontWeight: 700, color: '#f59e0b' }}>{voltage}</div>
-              <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Volts</div>
+              <div style={{ fontSize: '24px', fontWeight: 700, color: '#f59e0b' }}>{sourceVoltage}</div>
+              <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Volts (src)</div>
             </div>
-            <span style={{ fontSize: '20px', color: 'var(--text-muted)' }}>÷</span>
-            <div style={{ padding: '12px 20px', background: 'rgba(236, 72, 153, 0.15)', border: '1px solid rgba(236, 72, 153, 0.3)', borderRadius: 'var(--radius-md)', textAlign: 'center', minWidth: '80px' }}>
-              <div style={{ fontSize: '24px', fontWeight: 700, color: '#ec4899' }}>{resistance}</div>
-              <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ohms</div>
+            <span style={{ fontSize: '20px', color: 'var(--text-muted)' }}>-</span>
+            <div style={{ padding: '12px 20px', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: 'var(--radius-md)', textAlign: 'center', minWidth: '80px' }}>
+              <div style={{ fontSize: '24px', fontWeight: 700, color: '#10b981' }}>{batteryVoltage}</div>
+              <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Volts (batt)</div>
             </div>
             <span style={{ fontSize: '20px', color: 'var(--text-muted)' }}>=</span>
+            <div style={{ padding: '12px 20px', background: 'rgba(6, 182, 212, 0.15)', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: 'var(--radius-md)', textAlign: 'center', minWidth: '80px' }}>
+              <div style={{ fontSize: '24px', fontWeight: 700, color: '#06b6d4' }}>{netVoltage.toFixed(1)}</div>
+              <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Net Volts</div>
+            </div>
+            <span style={{ fontSize: '20px', color: 'var(--text-muted)' }}>→</span>
             <div style={{ padding: '12px 20px', background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.3)', borderRadius: 'var(--radius-md)', textAlign: 'center', minWidth: '80px' }}>
               <div style={{ fontSize: '24px', fontWeight: 700, color: '#6366f1' }}>{current.toFixed(2)}</div>
               <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Amps</div>
             </div>
-            <span style={{ fontSize: '20px', color: 'var(--text-muted)' }}>→</span>
-            <div style={{ padding: '12px 20px', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: 'var(--radius-md)', textAlign: 'center', minWidth: '80px' }}>
-              <div style={{ fontSize: '24px', fontWeight: 700, color: '#10b981' }}>{power.toFixed(1)}</div>
-              <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Watts</div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', flexWrap: 'wrap', padding: '20px 20px 0', background: 'var(--bg-glass)', borderRadius: 'var(--radius-lg)', marginTop: '16px' }}>
+            <div style={{ padding: '12px 20px', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: 'var(--radius-md)', textAlign: 'center', minWidth: '100px' }}>
+              <div style={{ fontSize: '24px', fontWeight: 700, color: '#10b981' }}>{usefulPower.toFixed(1)}</div>
+              <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Useful Power</div>
+            </div>
+            <span style={{ fontSize: '20px', color: 'var(--text-muted)' }}>+</span>
+            <div style={{ padding: '12px 20px', background: 'rgba(236, 72, 153, 0.15)', border: '1px solid rgba(236, 72, 153, 0.3)', borderRadius: 'var(--radius-md)', textAlign: 'center', minWidth: '100px' }}>
+              <div style={{ fontSize: '24px', fontWeight: 700, color: '#ec4899' }}>{heatLoss.toFixed(1)}</div>
+              <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Heat Loss</div>
+            </div>
+            <span style={{ fontSize: '20px', color: 'var(--text-muted)' }}>=</span>
+            <div style={{ padding: '12px 20px', background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.3)', borderRadius: 'var(--radius-md)', textAlign: 'center', minWidth: '100px' }}>
+              <div style={{ fontSize: '24px', fontWeight: 700, color: '#6366f1' }}>{totalPower.toFixed(1)}</div>
+              <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total Power</div>
             </div>
           </div>
 
           <div className="info-box" style={{ marginTop: '16px', background: 'rgba(6, 182, 212, 0.1)' }}>
             <span style={{ color: 'var(--text-secondary)' }}>
-              Heat lost in cable: I² × R = {current.toFixed(2)}² × {resistance} = <strong style={{ color: '#ec4899' }}>{heat.toFixed(1)}W</strong> wasted as heat.
-              Actual useful power: <strong style={{ color: '#10b981' }}>{usefulPower.toFixed(1)}W</strong>.
+              <strong style={{ color: '#06b6d4' }}>Net Voltage:</strong> {sourceVoltage}V - {batteryVoltage}V = {netVoltage.toFixed(1)}V.
+              <strong style={{ color: '#6366f1', marginLeft: '8px' }}>Current:</strong> {netVoltage.toFixed(1)}V ÷ {resistance}Ω = {current.toFixed(2)}A.
+              <br />
+              <strong style={{ color: '#10b981', marginTop: '8px', display: 'inline-block' }}>Useful Power (to battery):</strong> {batteryVoltage}V × {current.toFixed(2)}A = {usefulPower.toFixed(1)}W.
+              <strong style={{ color: '#ec4899', marginLeft: '8px' }}>Heat Loss:</strong> {current.toFixed(2)}² × {resistance} = {heatLoss.toFixed(1)}W.
             </span>
           </div>
         </div>
